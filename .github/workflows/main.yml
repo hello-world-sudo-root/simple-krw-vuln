@@ -13,12 +13,11 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6  # 升级到 v6
 
     - name: Setup Visual Studio environment
       uses: microsoft/setup-msbuild@v2
 
-    # 使用 winget 安装 WDK (替换之前出错的步骤)
     - name: Install WDK using winget
       shell: powershell
       run: |
@@ -33,14 +32,11 @@ jobs:
         msbuild CVE-2026-62735/CVE-2026-62735.vcxproj /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6  # 升级到 v6
       with:
         name: exploits
         path: |
-          CVE-2024-35250/Release/**/*.exe
-          CVE-2024-35250/Release/**/*.dll
-          CVE-2024-35250/Release/**/*.sys
-          CVE-2026-62735/Release/**/*.exe
-          CVE-2026-62735/Release/**/*.dll
-          CVE-2026-62735/Release/**/*.sys
+          Release/**/*.exe   # 修正路径
+          Release/**/*.dll   # 修正路径
+          Release/**/*.sys   # 修正路径
         if-no-files-found: warn
