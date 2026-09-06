@@ -1,0 +1,51 @@
+name: Build Windows Kernel Exploit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # 也支持手动触发
+  workflow_dispatch:
+
+jobs:
+  build:
+    # 使用 Windows 运行器
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        config: [Debug, Release]
+        platform: [x64, Win32]
+        # 可选：只构建部分组合以节省时间
+        exclude:
+          - config: Debug
+            platform: Win32
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Visual Studio environment
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build CVE-2024-35250
+      run: |
+        msbuild CVE-2024-35250/CVE-2024-35250.vcxproj /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.platform }} /verbosity:minimal
+
+    - name: Build CVE-2026-62735
+      run: |
+        msbuild CVE-2026-62735/CVE-2026-62735.vcxproj /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.platform }} /verbosity:minimal
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: exploit-${{ matrix.config }}-${{ matrix.platform }}
+        path: |
+          CVE-2024-35250/${{ matrix.config }}/**/*.exe
+          CVE-2024-35250/${{ matrix.config }}/**/*.dll
+          CVE-2024-35250/${{ matrix.config }}/**/*.sys
+          CVE-2026-62735/${{ matrix.config }}/**/*.exe
+          CVE-2026-62735/${{ matrix.config }}/**/*.dll
+          CVE-2026-62735/${{ matrix.config }}/**/*.sys
+        if-no-files-found: warn
