@@ -31,17 +31,11 @@ jobs:
       run: |
         msbuild CVE-2026-62735/CVE-2026-62735.vcxproj /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
 
-    - name: List build output files (debug)
-      shell: powershell
-      run: |
-        Get-ChildItem -Recurse -Include *.exe,*.dll,*.sys | Select-Object FullName
-
     - name: Upload build artifacts
       uses: actions/upload-artifact@v6
       with:
         name: exploits
         path: |
-          x64/Release/**/*.exe
-          x64/Release/**/*.dll
-          x64/Release/**/*.sys
+          CVE-2024-35250/x64/Release/*.exe
+          CVE-2026-62735/x64/Release/*.exe
         if-no-files-found: warn
