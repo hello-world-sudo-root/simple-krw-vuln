@@ -1,45 +1,46 @@
-name: Build with WDK
+name: Build Windows Kernel Exploit
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      # 安装 Visual Studio 构建工具（MSBuild 已存在，但确保包含 C++ 工作负载）
-      - name: Install Visual Studio Build Tools
-        uses: microsoft/setup-msbuild@v2
+    - name: Setup Visual Studio environment
+      uses: microsoft/setup-msbuild@v2
 
-      # 安装 Windows Driver Kit (WDK) 的静默安装脚本
-      - name: Install WDK
-        shell: powershell
-        run: |
-          # 下载 WDK 安装器（此处使用最新稳定版，可根据需要调整版本）
-          $wdkInstaller = "wdksetup.exe"
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2262651" -OutFile $wdkInstaller
-          # 静默安装，仅安装所需组件（跳过 VS 集成，因为已有）
-          Start-Process -Wait -FilePath .\$wdkInstaller -ArgumentList "/quiet /norestart /features +"
-          # 将 WDK 的库目录添加到环境变量，以便 MSBuild 能够找到
-          $wdkPath = "${env:ProgramFiles(x86)}\Windows Kits\10\Lib\10.0.26100.0\km\x64"  # 版本号可能不同
-          if (Test-Path $wdkPath) {
-            $env:LIB += ";$wdkPath"
-          }
-          # 也可设置 WDK 安装路径到环境变量供后续步骤使用
-          echo "WDK installed."
+    # 使用 winget 安装 WDK (替换之前出错的步骤)
+    - name: Install WDK using winget
+      shell: powershell
+      run: |
+        winget install --id Microsoft.WindowsWDK.10.0.26100 --exact --silent --accept-package-agreements --accept-source-agreements
 
-      - name: Build CVE-2024-35250
-        run: |
-          msbuild CVE-2024-35250/CVE-2024-35250.vcxproj /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
+    - name: Build CVE-2024-35250
+      run: |
+        msbuild CVE-2024-35250/CVE-2024-35250.vcxproj /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
 
-      - name: Build CVE-2026-62735
-        run: |
-          msbuild CVE-2026-62735/CVE-2026-62735.vcxproj /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
+    - name: Build CVE-2026-62735
+      run: |
+        msbuild CVE-2026-62735/CVE-2026-62735.vcxproj /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: exploits
-          path: |
-            **/Release/**/*.exe
-            **/Release/**/*.sys
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: exploits
+        path: |
+          CVE-2024-35250/Release/**/*.exe
+          CVE-2024-35250/Release/**/*.dll
+          CVE-2024-35250/Release/**/*.sys
+          CVE-2026-62735/Release/**/*.exe
+          CVE-2026-62735/Release/**/*.dll
+          CVE-2026-62735/Release/**/*.sys
+        if-no-files-found: warn
