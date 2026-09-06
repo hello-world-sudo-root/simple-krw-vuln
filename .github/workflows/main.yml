@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6  # 升级到 v6
+      uses: actions/checkout@v6
 
     - name: Setup Visual Studio environment
       uses: microsoft/setup-msbuild@v2
@@ -31,12 +31,17 @@ jobs:
       run: |
         msbuild CVE-2026-62735/CVE-2026-62735.vcxproj /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
 
+    - name: List build output files (debug)
+      shell: powershell
+      run: |
+        Get-ChildItem -Recurse -Include *.exe,*.dll,*.sys | Select-Object FullName
+
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v6  # 升级到 v6
+      uses: actions/upload-artifact@v6
       with:
         name: exploits
         path: |
-          Release/**/*.exe   # 修正路径
-          Release/**/*.dll   # 修正路径
-          Release/**/*.sys   # 修正路径
+          x64/Release/**/*.exe
+          x64/Release/**/*.dll
+          x64/Release/**/*.sys
         if-no-files-found: warn
